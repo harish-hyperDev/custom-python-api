@@ -61,7 +61,14 @@ def get_minimum_timestamp(timestamps):
 
 def main():
 
-    timestamp_data = get_timestamps() #.apply(lambda x: datetime.strftime(x, "%H:%M:%S"))
+    timestamp_data = []
+    
+    if len(sys.argv) == 2:
+        timestamp_data = sys.argv[1].replace(" ", "")
+        timestamp_data = timestamp_data.split(",")
+    else:
+        timestamp_data = get_timestamps() #.apply(lambda x: datetime.strftime(x, "%H:%M:%S"))
+        
     timestamp_datetime_data = [datetime.strptime(x, "%H:%M:%S") for x in timestamp_data]
     
     while True:
