@@ -11,13 +11,6 @@ from datetime import datetime
 from config import config  # Importing config.py from base path to main.py
 
 
-def get_current_time():
-    current_time = datetime.now().strftime("%H:%M:%S")
-    current_time = datetime.strptime(current_time, "%H:%M:%S")
-
-    return current_time
-
-
 class Sample:
 
     def __init__(self, url, csv_file):
@@ -27,6 +20,14 @@ class Sample:
         self.nearest_timestamp_duration = 0
         self.nearest_timestamp_occurrences = 0
         self.timestamp = 0
+        self.current_time = 0
+
+    def get_current_time(self):
+        current_time = datetime.now().strftime("%H:%M:%S")
+        current_time = datetime.strptime(current_time, "%H:%M:%S")
+
+        self.current_time = current_time
+        return current_time
 
     # Read the timestamps from csv file
     def get_timestamps(self):
@@ -60,10 +61,11 @@ class Sample:
     Calculate the seconds of nearest timestamp, and timestamp occurrences from given timestamps(argument)
     and assign their values to instance variables
     """
+
     def get_minimum_timestamp(self, timestamps):
 
         # get the time of the present day in HH:MM:SS format
-        current_time = get_current_time()
+        current_time = self.get_current_time()
 
         """
         Calculate seconds remaining from timestamps to current time
@@ -120,27 +122,53 @@ class Sample:
             logger.error("Time format is incorrect! Terminating the program.")
             exit(1)
 
-        sleep_flag = True
+        wait = False
         threads = []
 
         while True:
             # get the nearest timestamp seconds and its occurrences (repetitions)
-            get_time_thread = threading.Thread(target=get_current_time)
+            # get_time_thread = threading.Thread(target=self.get_current_time)
+            # get_time_thread.start()
+            # get_time_thread.join()
+            # print("current loop ", self.current_time)
+
+            # if not sleep_flag:
+            #     # print("current start ", self.current_time)
+            #     self.get_minimum_timestamp(timestamp_datetime)
+            #     threads = [threading.Thread(target=self.fetch_url) for x in
+            #                range(0, self.nearest_timestamp_occurrences)]
+            #
+            #     print(self.timestamp)
+            #     time.sleep(self.nearest_timestamp_duration - 0.2)
+            #     sleep_flag = True
+
+            if not wait:
+                self.get_minimum_timestamp(timestamp_datetime)
+                threads = [threading.Thread(target=self.fetch_url) for x in
+                           range(0, self.nearest_timestamp_occurrences)]
+
+                print("nearest timestamp - ", self.timestamp)
+                wait = True
+
+            get_time_thread = threading.Thread(target=self.get_current_time)
             get_time_thread.start()
             get_time_thread.join()
 
-            print(get_time_thread)
+            if self.current_time == self.timestamp:
+                print("starting logic - ", datetime.now())
 
-            if sleep_flag:
-                self.get_minimum_timestamp(timestamp_datetime)
-                threads = [threading.Thread(target=self.fetch_url) for x in range(0, self.nearest_timestamp_occurrences)]
-                time.sleep(self.nearest_timestamp_duration - 1)
-                sleep_flag = False
+                # print("current time - ", self.current_time)
+                # if len(threads):
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join()
 
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
+                wait = False
+                print("ending logic - ", datetime.now())
+
+
+                # threads = []
 
             # sleep till the nearest timestamp duration
             # if self.nearest_timestamp_occurrences > 1:
@@ -162,7 +190,8 @@ class Sample:
             body = response.read().decode("UTF-8")  # converting bytes data to str
             json_data = json.loads(body)  # deserializing str to dict
 
-        logger.info("GET request result - (IP : %s)", json_data['ip'])  # log the response data
+        logger.info("GET request for %s result - (IP : %s)", self.timestamp, json_data['ip'])  # log the response data
+        time.sleep(1)
 
 
 if __name__ == "__main__":
