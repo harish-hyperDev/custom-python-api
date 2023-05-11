@@ -126,59 +126,36 @@ class Sample:
         threads = []
 
         while True:
-            # get the nearest timestamp seconds and its occurrences (repetitions)
-            # get_time_thread = threading.Thread(target=self.get_current_time)
-            # get_time_thread.start()
-            # get_time_thread.join()
-            # print("current loop ", self.current_time)
 
-            # if not sleep_flag:
-            #     # print("current start ", self.current_time)
-            #     self.get_minimum_timestamp(timestamp_datetime)
-            #     threads = [threading.Thread(target=self.fetch_url) for x in
-            #                range(0, self.nearest_timestamp_occurrences)]
-            #
-            #     print(self.timestamp)
-            #     time.sleep(self.nearest_timestamp_duration - 0.2)
-            #     sleep_flag = True
-
+            """
+            Retrieve the nearest timestamp and its occurrences
+            and wait until the threads have started (wait = True)
+            """
             if not wait:
                 self.get_minimum_timestamp(timestamp_datetime)
                 threads = [threading.Thread(target=self.fetch_url) for x in
                            range(0, self.nearest_timestamp_occurrences)]
 
-                print("nearest timestamp - ", self.timestamp)
                 wait = True
+
+            # get time in HH:MM:SS (current time can be accessed with self.current_time)
 
             get_time_thread = threading.Thread(target=self.get_current_time)
             get_time_thread.start()
             get_time_thread.join()
 
+            """
+            Start the threads when the current time and nearest timestamp are equal
+            and stop the wait, to retrieve nearest timestamp and occurrences.
+            """
             if self.current_time == self.timestamp:
-                print("starting logic - ", datetime.now())
-
-                # print("current time - ", self.current_time)
-                # if len(threads):
+                print("Started Thread - ", datetime.now())
                 for t in threads:
                     t.start()
                 for t in threads:
                     t.join()
-
+                print("Ended Thread - ", datetime.now())
                 wait = False
-                print("ending logic - ", datetime.now())
-
-
-                # threads = []
-
-            # sleep till the nearest timestamp duration
-            # if self.nearest_timestamp_occurrences > 1:
-            # else:
-            #     time.sleep(self.nearest_timestamp_duration - 0.5)
-
-            # count = 0
-            # while count < self.nearest_timestamp_occurrences:
-            #     self.fetch_url()
-            #     count += 1
 
     def fetch_url(self):
 
