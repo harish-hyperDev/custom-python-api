@@ -21,6 +21,7 @@ class Sample:
         self.nearest_timestamp_occurrences = 0
         self.timestamp = 0
         self.current_time = 0
+        self.wait = False
 
     def get_current_time(self):
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -122,7 +123,7 @@ class Sample:
             logger.error("Time format is incorrect! Terminating the program.")
             exit(1)
 
-        wait = False
+        self.wait = False
         threads = []
 
         while True:
@@ -131,31 +132,47 @@ class Sample:
             Retrieve the nearest timestamp and its occurrences
             and wait until the threads have started (wait = True)
             """
-            if not wait:
+            if not self.wait:
                 self.get_minimum_timestamp(timestamp_datetime)
                 threads = [threading.Thread(target=self.fetch_url) for x in
                            range(0, self.nearest_timestamp_occurrences)]
 
-                wait = True
+                self.wait = True
 
-            # get time in HH:MM:SS (current time can be accessed with self.current_time)
+                # get time in HH:MM:SS (current time can be accessed with self.current_time)
+            try:
+                get_time_thread = threading.Thread(target=self.get_current_time)
+                get_time_thread.start()
+                get_time_thread.join()
 
-            get_time_thread = threading.Thread(target=self.get_current_time)
-            get_time_thread.start()
-            get_time_thread.join()
+                """
+                Start the threads when the current time and nearest timestamp are equal
+                and stop the wait, to retrieve nearest timestamp and occurrences.
+                """
+                start_fetch1 = threading.Thread(target=self.start_fetch, kwargs={"threads": threads})
+                start_fetch2 = threading.Thread(target=self.start_fetch, kwargs={"threads": threads})
 
-            """
-            Start the threads when the current time and nearest timestamp are equal
-            and stop the wait, to retrieve nearest timestamp and occurrences.
-            """
-            if self.current_time == self.timestamp:
-                print("Started Thread - ", datetime.now())
-                for t in threads:
-                    t.start()
-                for t in threads:
-                    t.join()
-                print("Ended Thread - ", datetime.now())
-                wait = False
+                start_fetch1.start()
+                start_fetch2.start()
+
+                start_fetch1.join()
+                start_fetch2.join()
+
+            except Exception:
+                print("Exception found")
+                pass
+
+    def start_fetch(self, threads):
+        if self.current_time == self.timestamp:
+            print("Started Thread - ", datetime.now())
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            print("Ended Thread - ", datetime.now())
+            self.wait = False
+
+
 
     def fetch_url(self):
 
