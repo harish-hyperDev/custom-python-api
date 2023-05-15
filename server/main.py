@@ -74,6 +74,7 @@ class Sample:
         If the difference in seconds are positive values then store the value in list
         else store the value as 0
         """
+
         timestamp_in_seconds = [(x - current_time).total_seconds() if (x - current_time).total_seconds() > 0
                                 else 0
                                 for x in timestamps]
@@ -136,6 +137,7 @@ class Sample:
             self.call_fetch_url(timestamp_datetime)
 
     def call_fetch_url(self, timestamp_datetime):
+
         """
         Retrieve the nearest timestamp and its occurrences
         and wait until the threads have started (wait = True)
@@ -164,7 +166,7 @@ class Sample:
             for t in self.threads:
                 t.join()
             # print("Ended Thread - ", datetime.now())
-            wait = False
+            self.wait = False
 
     def fetch_url(self):
 
