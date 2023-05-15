@@ -17,7 +17,7 @@ class Sample:
         self.timestamp_list = []
         self.url = url
         self.csv_file = csv_file
-        self.nearest_timestamp_duration = 0
+        # self.nearest_timestamp_duration = 0
         self.nearest_timestamp_occurrences = 0
         self.timestamp = 0
         self.current_time = 0
@@ -60,8 +60,8 @@ class Sample:
         return timestamp_list[1:]
 
     """
-    Calculate the seconds of nearest timestamp, and timestamp occurrences from given timestamps(argument)
-    and assign their values to instance variables
+    Calculate the nearest timestamp occurrences from given timestamps(argument)
+    and assign its value to instance variable
     """
 
     def get_minimum_timestamp(self, timestamps):
@@ -95,12 +95,13 @@ class Sample:
                 filtered_timestamps[timestamp_in_seconds.index(nearest_timestamp_duration)])
 
             self.timestamp = filtered_timestamps[timestamp_in_seconds.index(nearest_timestamp_duration)]
+
         except ValueError:
             logger.debug("No timestamps remaining! Terminating the program.")
             exit(0)
 
         # assign the seconds remaining for nearest timestamp and its occurrences to instance variables
-        self.nearest_timestamp_duration = nearest_timestamp_duration
+        # self.nearest_timestamp_duration = nearest_timestamp_duration
         self.nearest_timestamp_occurrences = nearest_timestamp_occurrences
 
     def main(self):
@@ -115,7 +116,7 @@ class Sample:
         # otherwise read data from csv file
         else:
             logger.info("Reading data from csv.")
-            timestamp_result = self.get_timestamps()  # read timestamps from csv file and store in instance variable
+            timestamp_result = self.get_timestamps()  # read timestamps from csv file and store in instance variable "timestamp_list"
             if timestamp_result == 1:
                 logger.warning("CSV file is not found on the given path! Terminating the program.")
                 exit(1)

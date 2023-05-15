@@ -66,7 +66,17 @@ def test_nearest_timestamp():
 
 def test_api_called_on_timestamp():
     sample_obj = Sample(request_url, csv_file_path)
-    sample_obj.main()
+
+    # a list of timestamps in str type
+    timestamps_list = ["23:50:00", "23:55:00", "23:50:00", "23:50:00", "23:59:00"]
+
+    # converting timestamps from str type to datetime.datetime type
+    timestamps_datetime_list = [datetime.strptime(x, "%H:%M:%S") for x in timestamps_list]
+
+    # finds the nearest timestamp by calculating difference from timestamps with current time
+    sample_obj.get_minimum_timestamp(timestamps_datetime_list)
+
+    sample_obj.call_fetch_url()
 
 
 if __name__ == "__main__":
