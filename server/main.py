@@ -21,6 +21,8 @@ class Sample:
         self.nearest_timestamp_occurrences = 0
         self.timestamp = 0
         self.current_time = 0
+        self.wait = False
+        self.threads = []
 
     def get_current_time(self):
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -31,7 +33,6 @@ class Sample:
 
     # Read the timestamps from csv file
     def get_timestamps(self):
-
         timestamp_list = []
 
         """
@@ -40,15 +41,15 @@ class Sample:
         """
 
         try:
-            logger.info("Reading data from csv.")
             with open(self.csv_file, newline='') as csvfile:
                 spam_reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in spam_reader:
                     timestamp_list.append(', '.join(row))
 
         except FileNotFoundError:
-            logger.warning("CSV file is not found on the given path! Terminating the program.")
-            exit(1)
+            return 1
+            # logger.warning("CSV file is not found on the given path! Terminating the program.")
+            # exit(1)
 
         """
         Store the timestamps in instance variable except the first value
@@ -56,6 +57,7 @@ class Sample:
         """
 
         self.timestamp_list = timestamp_list[1:]
+        return timestamp_list[1:]
 
     """
     Calculate the seconds of nearest timestamp, and timestamp occurrences from given timestamps(argument)
@@ -85,7 +87,7 @@ class Sample:
         # remove the difference values which are negative and zero
         timestamp_in_seconds = [i for i in timestamp_in_seconds if i > 0]
 
-        # get the nearest timestamp seconds and the number of occurences(repetitions) of the timestamp
+        # get the nearest timestamp seconds and the number of occurrences(repetitions) of the timestamp
         try:
             nearest_timestamp_duration = min(timestamp_in_seconds)
             nearest_timestamp_occurrences = filtered_timestamps.count(
@@ -111,7 +113,12 @@ class Sample:
 
         # otherwise read data from csv file
         else:
-            # self.get_timestamps()
+            logger.info("Reading data from csv.")
+            timestamp_result = self.get_timestamps()  # read timestamps from csv file and store in instance variable
+            if timestamp_result == 1:
+                logger.warning("CSV file is not found on the given path! Terminating the program.")
+                exit(1)
+
             timestamp_data = self.timestamp_list
 
         # check if the timestamps are in valid format else log and throw exception
@@ -120,42 +127,44 @@ class Sample:
 
         except ValueError:
             logger.error("Time format is incorrect! Terminating the program.")
-            exit(1)
+            return
 
-        wait = False
-        threads = []
+        self.wait = False
+        self.threads = []
 
         while True:
+            self.call_fetch_url(timestamp_datetime)
 
-            """
-            Retrieve the nearest timestamp and its occurrences
-            and wait until the threads have started (wait = True)
-            """
-            if not wait:
-                self.get_minimum_timestamp(timestamp_datetime)
-                threads = [threading.Thread(target=self.fetch_url) for x in
-                           range(0, self.nearest_timestamp_occurrences)]
+    def call_fetch_url(self, timestamp_datetime):
+        """
+        Retrieve the nearest timestamp and its occurrences
+        and wait until the threads have started (wait = True)
+        """
+        if not self.wait:
+            self.get_minimum_timestamp(timestamp_datetime)
+            self.threads = [threading.Thread(target=self.fetch_url) for x in
+                            range(0, self.nearest_timestamp_occurrences)]
 
-                wait = True
+            self.wait = True
 
-            # get time in HH:MM:SS (current time can be accessed with self.current_time)
+        # get time in HH:MM:SS (current time can be accessed with self.current_time)
 
-            get_time_thread = threading.Thread(target=self.get_current_time)
-            get_time_thread.start()
-            get_time_thread.join()
+        get_time_thread = threading.Thread(target=self.get_current_time)
+        get_time_thread.start()
+        get_time_thread.join()
 
-            """
-            Start the threads when the current time and nearest timestamp are equal
-            and stop the wait, to retrieve nearest timestamp and occurrences.
-            """
-            if self.current_time == self.timestamp:
-                print("Started Thread - ", datetime.now())
-                for t in threads:
-                    t.start()
-                for t in threads:
-                    t.join()
-                print("Ended Thread - ", datetime.now())
-                wait = False
+        """
+        Start the threads when the current time and nearest timestamp are equal
+        and stop the wait, to retrieve nearest timestamp and occurrences.
+        """
+        if self.current_time == self.timestamp:
+            # print("Started Thread - ", datetime.now())
+            for t in self.threads:
+                t.start()
+            for t in self.threads:
+                t.join()
+            # print("Ended Thread - ", datetime.now())
+            wait = False
 
     def fetch_url(self):
 
@@ -201,9 +210,7 @@ if __name__ == "__main__":
 
     try:
         sample_obj = Sample(request_url, csv_file_path)
-        sample_obj.get_timestamps()  # read timestamps from csv file and store them in instance variable
         sample_obj.main()
-        # main()
 
     # throw exception if user stops the program
     except KeyboardInterrupt:
