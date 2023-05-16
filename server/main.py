@@ -1,6 +1,10 @@
-import time, csv, json
-import os, sys
-import logging, threading
+import csv
+import json
+import logging
+import os
+import sys
+import threading
+import time
 
 BASE_PATH = os.path.abspath(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))  # getting the project base path
@@ -11,18 +15,21 @@ from datetime import datetime
 from config import config  # Importing config.py from base path to main.py
 
 
-class Sample:
+class APIClass:
 
     def __init__(self, url, csv_file):
+
+        # Instance variables
         self.timestamp_list = []
         self.url = url
         self.csv_file = csv_file
-        # self.nearest_timestamp_duration = 0
         self.nearest_timestamp_occurrences = 0
-        self.timestamp = 0
+        self.timestamp = datetime.now()
         self.current_time = 0
         self.wait = False
         self.threads = []
+        self.remaining_timestamps = 1
+        # self.nearest_timestamp_duration = 0
 
     def get_current_time(self):
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -87,22 +94,25 @@ class Sample:
 
         # remove the difference values which are negative and zero
         timestamp_in_seconds = [i for i in timestamp_in_seconds if i > 0]
+        self.remaining_timestamps = len(filtered_timestamps)
 
         # get the nearest timestamp seconds and the number of occurrences(repetitions) of the timestamp
-        try:
+        if self.remaining_timestamps > 0:
+
             nearest_timestamp_duration = min(timestamp_in_seconds)
             nearest_timestamp_occurrences = filtered_timestamps.count(
                 filtered_timestamps[timestamp_in_seconds.index(nearest_timestamp_duration)])
 
             self.timestamp = filtered_timestamps[timestamp_in_seconds.index(nearest_timestamp_duration)]
+            self.nearest_timestamp_occurrences = nearest_timestamp_occurrences
 
-        except ValueError:
-            logger.debug("No timestamps remaining! Terminating the program.")
-            exit(0)
+        else:
+            self.nearest_timestamp_occurrences = 0
+            # logger.debug("No timestamps remaining! Terminating the program.")
+            # exit(0)
 
         # assign the seconds remaining for nearest timestamp and its occurrences to instance variables
         # self.nearest_timestamp_duration = nearest_timestamp_duration
-        self.nearest_timestamp_occurrences = nearest_timestamp_occurrences
 
     def main(self):
 
@@ -134,19 +144,25 @@ class Sample:
         self.wait = False
         self.threads = []
 
-        while True:
+        while self.remaining_timestamps > 0:
             self.call_fetch_url(timestamp_datetime)
+
+        if self.remaining_timestamps == 0:
+            return 1
 
     def call_fetch_url(self, timestamp_datetime):
 
         """
-        Retrieve the nearest timestamp and its occurrences
-        and wait until the threads have started (wait = True)
+        Retrieve the nearest timestamp and its occurrences by calling "get_minimum_timestamp"
+        and wait until the threads have started (self.wait = True)
         """
         if not self.wait:
             self.get_minimum_timestamp(timestamp_datetime)
             self.threads = [threading.Thread(target=self.fetch_url) for x in
                             range(0, self.nearest_timestamp_occurrences)]
+
+            if self.remaining_timestamps == 0:  # if there are no remaining timestamps, then exit the program
+                return 1
 
             self.wait = True
 
@@ -159,15 +175,19 @@ class Sample:
         """
         Start the threads when the current time and nearest timestamp are equal
         and stop the wait, to retrieve nearest timestamp and occurrences.
+        
+        The both values in below condition are assigned when "get_minimum_timestamp" instance method is called
         """
         if self.current_time == self.timestamp:
-            # print("Started Thread - ", datetime.now())
             for t in self.threads:
                 t.start()
             for t in self.threads:
                 t.join()
-            # print("Ended Thread - ", datetime.now())
+
             self.wait = False
+
+            if self.timestamp:  # don't return self.timestamp if it's value is None
+                return self.timestamp.strftime("%H:%M:%S")
 
     def fetch_url(self):
 
@@ -179,8 +199,8 @@ class Sample:
             body = response.read().decode("UTF-8")  # converting bytes data to str
             json_data = json.loads(body)  # deserializing str to dict
 
-        logger.info("GET request for %s result - (IP : %s)", self.timestamp, json_data['ip'])  # log the response data
-        time.sleep(1)
+        if logger:
+            logger.info("GET request for %s result - (IP : %s)", self.timestamp, json_data['ip'])  # log the response data
 
 
 if __name__ == "__main__":
@@ -212,8 +232,11 @@ if __name__ == "__main__":
                                         "Accept": "application/json"})
 
     try:
-        sample_obj = Sample(request_url, csv_file_path)
-        sample_obj.main()
+        sample_obj = APIClass(request_url, csv_file_path)
+        main_result = sample_obj.main()
+
+        if main_result == 1:
+            logger.debug("No timestamps found! Terminating the Program.")
 
     # throw exception if user stops the program
     except KeyboardInterrupt:
