@@ -106,8 +106,8 @@ class APIClass:
             self.timestamp = filtered_timestamps[timestamp_in_seconds.index(nearest_timestamp_duration)]
             self.nearest_timestamp_occurrences = nearest_timestamp_occurrences
 
-        else:
-            self.nearest_timestamp_occurrences = 0
+        # else:
+        #     self.nearest_timestamp_occurrences = 0
             # logger.debug("No timestamps remaining! Terminating the program.")
             # exit(0)
 
@@ -148,7 +148,7 @@ class APIClass:
             self.call_fetch_url(timestamp_datetime)
 
         if self.remaining_timestamps == 0:
-            return 1
+            return 404
 
     def call_fetch_url(self, timestamp_datetime):
 
@@ -199,8 +199,11 @@ class APIClass:
             body = response.read().decode("UTF-8")  # converting bytes data to str
             json_data = json.loads(body)  # deserializing str to dict
 
-        if logger:
-            logger.info("GET request for %s result - (IP : %s)", self.timestamp, json_data['ip'])  # log the response data
+        try:
+            if logger:
+                logger.info("GET request for %s result - (IP : %s)", self.timestamp, json_data['ip'])  # log the response data
+        except NameError:
+            pass
 
 
 if __name__ == "__main__":
@@ -235,7 +238,7 @@ if __name__ == "__main__":
         sample_obj = APIClass(request_url, csv_file_path)
         main_result = sample_obj.main()
 
-        if main_result == 1:
+        if main_result == 404:
             logger.debug("No timestamps found! Terminating the Program.")
 
     # throw exception if user stops the program

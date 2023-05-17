@@ -21,7 +21,7 @@ request_url = Request(url, headers={"User-Agent": "Mozilla/5.0",
 
 
 class TestAPIClass:
-    def test_get_timestamps(self):
+    def test_get_timestamps_from_csv(self):
         api = APIClass(request_url, csv_file_path)
 
         """
@@ -31,6 +31,7 @@ class TestAPIClass:
 
         # check if all the timestamps in list are of str type
         res = all(isinstance(ele, str) for ele in timestamps)
+
         assert res == True
 
     def test_nearest_timestamp(self):
@@ -71,32 +72,20 @@ class TestAPIClass:
 
         # a list of timestamps in str type
         # timestamps_list = ["17:10:41", "17:10:41", "23:50:00", "23:55:00", "23:50:00", "23:50:00", "23:59:00"]
-        timestamps_list = ["19:47:21", "19:47:21", "19:05:01"]
+        timestamps_list = ["15:06:21", "15:06:21", "15:06:31"]
+
         # converting timestamps from str type to datetime.datetime type
         timestamps_datetime_list = [datetime.strptime(x, "%H:%M:%S") for x in timestamps_list]
 
-        # print(len(timestamps_datetime_list))
-
-        # assert "hello" == "hello"
-
-        # finds the nearest timestamp by calculating difference from timestamps with current time
-        # sample_obj.get_minimum_timestamp(timestamps_datetime_list)
-
+        # call the url
         timestamp = 0
         while api.remaining_timestamps > 0:
             api.call_fetch_url(timestamps_datetime_list)
             timestamp = api.timestamp.strftime("%H:%M:%S")
 
-        assert timestamp == "19:47:21"
+        times_api_got_called = api.nearest_timestamp_occurrences
+
+        assert timestamp == "15:06:31"
+        assert times_api_got_called == 1
 
 
-if __name__ == "__main__":
-    pass
-    # api_obj = APIClass(request_url, csv_file_path)
-
-    # test_obj = TestSampleClass()
-    # test_obj.test_sent_get_request_on_timestamp()
-
-    # test_get_timestamps()
-    # test_sent_get_request_on_timestamp()
-    # test_nearest_timestamp()
