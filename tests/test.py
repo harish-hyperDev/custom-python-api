@@ -72,20 +72,16 @@ class TestAPIClass:
 
         # a list of timestamps in str type
         # timestamps_list = ["17:10:41", "17:10:41", "23:50:00", "23:55:00", "23:50:00", "23:50:00", "23:59:00"]
-        timestamps_list = ["15:06:21", "15:06:21", "15:06:31"]
+        timestamps_list = ["18:02:31", "18:02:31", "18:02:35", "18:02:37"]
 
         # converting timestamps from str type to datetime.datetime type
         timestamps_datetime_list = [datetime.strptime(x, "%H:%M:%S") for x in timestamps_list]
 
-        # call the url
-        timestamp = 0
+        # call the url on timestamps
         while api.remaining_timestamps > 0:
             api.call_fetch_url(timestamps_datetime_list)
-            timestamp = api.timestamp.strftime("%H:%M:%S")
 
-        times_api_got_called = api.nearest_timestamp_occurrences
+        assert api.request_sent_on_timestamps == timestamps_list
 
-        assert timestamp == "15:06:31"
-        assert times_api_got_called == 1
 
 

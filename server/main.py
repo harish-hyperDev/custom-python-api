@@ -20,15 +20,19 @@ class APIClass:
     def __init__(self, url, csv_file):
 
         # Instance variables
+        self.request_sent_on_timestamps = []
         self.timestamp_list = []
+        self.threads = []
+
         self.url = url
         self.csv_file = csv_file
+
         self.nearest_timestamp_occurrences = 0
-        self.timestamp = datetime.now()
         self.current_time = 0
-        self.wait = False
-        self.threads = []
         self.remaining_timestamps = 1
+
+        self.timestamp = datetime.now()
+        self.wait = False
         # self.nearest_timestamp_duration = 0
 
     def get_current_time(self):
@@ -55,8 +59,6 @@ class APIClass:
 
         except FileNotFoundError:
             return 1
-            # logger.warning("CSV file is not found on the given path! Terminating the program.")
-            # exit(1)
 
         """
         Store the timestamps in instance variable except the first value
@@ -126,8 +128,8 @@ class APIClass:
         # otherwise read data from csv file
         else:
             logger.info("Reading data from csv.")
-            timestamp_result = self.get_timestamps()  # read timestamps from csv file and store in instance variable "timestamp_list"
-            if timestamp_result == 1:
+            csv_timestamps_result = self.get_timestamps()  # read timestamps from csv file and store in instance variable "timestamp_list"
+            if csv_timestamps_result == 1:
                 logger.warning("CSV file is not found on the given path! Terminating the program.")
                 exit(1)
 
@@ -197,11 +199,13 @@ class APIClass:
         """
         with urlopen(self.url) as response:
             body = response.read().decode("UTF-8")  # converting bytes data to str
-            json_data = json.loads(body)  # deserializing str to dict
+            json_data = json.loads(body)            # deserializing str to dict
 
+            self.request_sent_on_timestamps.append(self.timestamp.strftime("%H:%M:%S"))
         try:
             if logger:
                 logger.info("GET request for %s result - (IP : %s)", self.timestamp, json_data['ip'])  # log the response data
+                print("timestamps called : ", self.request_sent_on_timestamps)
         except NameError:
             pass
 
